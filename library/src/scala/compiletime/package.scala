@@ -120,6 +120,8 @@ inline def constValueTuple[T <: Tuple]: T =
   val res =
     inline erasedValue[T] match
       case _: EmptyTuple => EmptyTuple
+      case _: (EmptyTuple *: ts) => EmptyTuple *: constValueTuple[ts]
+      case _: ((t *: hts) *: ts) => constValueTuple[t *: hts] *: constValueTuple[ts]
       case _: (t *: ts) => constValue[t] *: constValueTuple[ts]
     end match
   res.asInstanceOf[T]
