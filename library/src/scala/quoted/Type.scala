@@ -70,10 +70,14 @@ object Type:
     valueOfTuple(quotes.reflect.TypeRepr.of[T]).asInstanceOf[Option[T]]
 
   private def valueOfTuple(using Quotes)(tpe: quotes.reflect.TypeRepr): Option[Tuple] =
-    import quotes.reflect.*
-    val cons = Symbol.classSymbol("scala.*:")
-    def rec(tpe: TypeRepr): Option[Tuple] =
+    ValueOf.unapply(tpe)
+
+  private object ValueOf:
+    def unapply(using Quotes)(tpe: quotes.reflect.TypeRepr): Option[Any] =
+      import quotes.reflect.*
+      val cons = Symbol.classSymbol("scala.*:")
       tpe.widenTermRefByName.dealias match
+        case ConstantType(const) => Some(const.value)
         case AppliedType(fn, tpes) if defn.isTupleClass(fn.typeSymbol) =>
           tpes.foldRight(Option[Tuple](EmptyTuple)) {
             case (_, None) => None
@@ -81,19 +85,11 @@ object Type:
             case _ => None
           }
         case AppliedType(tp, List(ValueOf(headValue), tail)) if tp.derivesFrom(cons) =>
-          rec(tail) match
-            case Some(tailValue) => Some(headValue *: tailValue)
+          unapply(tail) match
+            case Some(tailValue) => Some(headValue *: tailValue.asInstanceOf[Tuple])
             case None => None
         case tpe =>
           if tpe.derivesFrom(Symbol.classSymbol("scala.EmptyTuple")) then Some(EmptyTuple)
           else None
-    rec(tpe)
-
-  private object ValueOf:
-    def unapply(using Quotes)(tpe: quotes.reflect.TypeRepr): Option[Any] =
-      import quotes.reflect.*
-      tpe.widenTermRefByName.dealias match
-        case ConstantType(const) => Some(const.value)
-        case _ => None
 
 end Type
