@@ -305,4 +305,6 @@ sealed abstract class *:[+H, +T <: Tuple] extends NonEmptyTuple
 
 object *: {
   def unapply[H, T <: Tuple](x: H *: T): (H, T) = (x.head, x.tail)
+  
+  given nonEmptyTupleValueOf[H: ValueOf, T <: Tuple: ValueOf]: ValueOf[H *: T] = ValueOf(valueOf[H] *: valueOf[T])
 }
